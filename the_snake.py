@@ -22,6 +22,13 @@ OPPOSITE_DIRECTIONS = {
     RIGHT: LEFT,
 }
 
+KEY_TO_DIRECTION = {
+    pygame.K_UP: UP,
+    pygame.K_DOWN: DOWN,
+    pygame.K_LEFT: LEFT,
+    pygame.K_RIGHT: RIGHT,
+}
+
 # Цвет фона - черный:
 BOARD_BACKGROUND_COLOR = (0, 0, 0)
 
@@ -36,6 +43,10 @@ SNAKE_COLOR = (0, 255, 0)
 
 # Скорость движения змейки:
 SPEED = 7
+MIN_SPEED = 1
+MAX_SPEED = 30
+SPEED_STEP = 1
+current_speed = SPEED
 
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -131,8 +142,6 @@ class Snake(GameObject):
 
     def reset(self):
         """Сбрасывает змейку к начальному состоянию."""
-        screen.fill(BOARD_BACKGROUND_COLOR)
-
         self.length = 1
         self.positions = [CENTER]
         self.direction = RIGHT
@@ -147,35 +156,27 @@ class Snake(GameObject):
 
 def handle_keys(snake):
     """Обрабатывает нажатия клавиш управления змейкой."""
-    global SPEED
-
-    key_to_direction = {
-        pygame.K_UP: UP,
-        pygame.K_DOWN: DOWN,
-        pygame.K_LEFT: LEFT,
-        pygame.K_RIGHT: RIGHT,
-    }
+    global current_speed
 
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT or (
+            event.type == pygame.KEYDOWN
+            and event.key == pygame.K_ESCAPE
+        ):
             pygame.quit()
             raise SystemExit
 
         if event.type != pygame.KEYDOWN:
             continue
 
-        if event.key == pygame.K_ESCAPE:
-            pygame.quit()
-            raise SystemExit
-
         if event.key in (pygame.K_EQUALS, pygame.K_KP_PLUS):
-            SPEED = min(SPEED + 1, 30)
+            current_speed = min(current_speed + SPEED_STEP, MAX_SPEED)
 
         elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
-            SPEED = max(SPEED - 1, 1)
+            current_speed = max(current_speed - SPEED_STEP, MIN_SPEED)
 
         else:
-            new_direction = key_to_direction.get(event.key)
+            new_direction = KEY_TO_DIRECTION.get(event.key)
 
             if new_direction is not None:
                 snake.update_direction(new_direction)
@@ -187,11 +188,9 @@ def main():
     pygame.init()
     # Тут нужно создать экземпляры классов.
     snake = Snake()  # центр и цвет уже заданы в классе
-    # цвет задан, позиция выбирается случайно
     apple = Apple(occupied_cells=snake.positions)
 
     while True:
-        # Тут опишите основную логику игры.
         handle_keys(snake)  # смотрим, какую клавишу нажал игрок
         snake.move()  # двигаем змейку на одну клетку
         if snake.get_head_position() == apple.position:
@@ -207,7 +206,7 @@ def main():
             f'Змейка | ESC — выход | Скорость: {SPEED} | + / - изменить'
         )
         pygame.display.update()  # показать на экране то, что мы нарисовали
-        clock.tick(SPEED)   # ограничить скорость игрового цикла
+        clock.tick(current_speed)   # ограничить скорость игрового цикла
 
 
 if __name__ == '__main__':
